@@ -1,8 +1,10 @@
 import streamlit as st
 import requests
 import os
-import mysql.connector
+import mysql.connector # type: ignore
 from dotenv import load_dotenv
+
+
 
 # Carregar variáveis do .env
 load_dotenv()
@@ -21,6 +23,15 @@ def conectar_mysql():
         database=os.getenv("DB_NAME", "filmes_db")
     )
 
+try:
+    conn = conectar_mysql()
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1")
+    conn.close()
+    st.success("✅ Conexão com o MySQL funcionando!")
+except Exception as e:
+    st.error(f"❌ Erro de conexão com o MySQL: {e}")
+
 def buscar_filmes(titulo):
     url = "https://api.themoviedb.org/3/search/movie"
     params = {
@@ -34,14 +45,20 @@ def buscar_filmes(titulo):
     return []
 
 def salvar_filme(titulo, ano, poster_url, nota, classificacao):
-    conn = conectar_mysql()
-    cursor = conn.cursor()
-    sql = "INSERT INTO filmes (titulo, ano, poster_url, nota, classificacao) VALUES (%s, %s, %s, %s, %s)"
-    valores = (titulo, ano, poster_url, nota, classificacao)
-    cursor.execute(sql, valores)
-    conn.commit()
-    cursor.close()
-    conn.close()
+    try:
+        conn = conectar_mysql()
+        cursor = conn.cursor()
+        sql = """
+        INSERT INTO filmes (titulo, ano, poster_url, nota, classificacao)
+        VALUES (%s, %s, %s, %s, %s)
+        """
+        valores = (titulo, ano, poster_url, nota, classificacao)
+        cursor.execute(sql, valores)
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        st.error(f"❌ Erro ao salvar no banco: {e}")
 
 # Interface
 st.title("🎬 Classificador de Filmes")
