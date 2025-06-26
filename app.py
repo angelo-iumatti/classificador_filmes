@@ -52,20 +52,20 @@ if st.button("Buscar"):
     resultados = buscar_filmes(titulo_busca)
     if resultados:
         for filme in resultados[:5]:
-    titulo = filme.get("title")
-    ano = filme.get("release_date", "")[:4]
-    poster = filme.get("poster_path")
-    poster_url = f"{IMG_BASE}{poster}" if poster else ""
+            titulo = filme.get("title")
+            ano = filme.get("release_date", "")[:4]
+            poster = filme.get("poster_path")
+            poster_url = f"{IMG_BASE}{poster}" if poster else ""
 
-    with st.form(f"form_{titulo}"):
-        st.subheader(f"{titulo} ({ano})")
-        if poster_url:
-            st.image(poster_url, width=200)
+            with st.form(f"form_{titulo}"):
+                st.subheader(f"{titulo} ({ano})")
+                if poster_url:
+                    st.image(poster_url, width=200)
 
-        nota = st.slider(f"Dê uma nota para '{titulo}'", 0.0, 10.0, 7.0, 0.5, key=f"nota_{titulo}")
-        submitted = st.form_submit_button(f"Salvar avaliação")
+                nota = st.slider(f"Dê uma nota para '{titulo}'", 0.0, 10.0, 7.0, 0.5, key=f"nota_{titulo}")
+                submitted = st.form_submit_button(f"Salvar avaliação")
 
-        if submitted:
-            classificacao = "Gostei" if nota >= 7 else "Não gostei"
-            salvar_filme(titulo, int(ano) if ano else None, poster_url, nota, classificacao)
-            st.success(f"Filme salvo com classificação: {classificacao}")
+                if submitted:
+                    classificacao = "Gostei" if nota >= 7 else "Não gostei"
+                    salvar_filme(titulo, int(ano) if ano else None, poster_url, nota, classificacao)
+                    st.success(f"Filme salvo com classificação: {classificacao}")
