@@ -38,3 +38,5 @@ NoneType: None
 2025-06-26 13:41:30,937 [DEBUG] https://api.themoviedb.org:443 "GET /3/search/movie?api_key=5fce5296b0c1d8e1159b8fd70ee5c9a0&query=Avatar&language=pt-BR HTTP/1.1" 200 None
 2025-06-26 13:59:30,477 [DEBUG] Starting new HTTPS connection (1): api.themoviedb.org:443
 2025-06-26 13:59:30,841 [DEBUG] https://api.themoviedb.org:443 "GET /3/search/movie?api_key=5fce5296b0c1d8e1159b8fd70ee5c9a0&query=duna&language=pt-BR HTTP/1.1" 200 None
+2025-06-26 14:15:55,555 [DEBUG] Starting new HTTPS connection (1): api.themoviedb.org:443
+2025-06-26 14:15:55,920 [DEBUG] https://api.themoviedb.org:443 "GET /3/search/movie?api_key=5fce5296b0c1d8e1159b8fd70ee5c9a0&query=Senhor+dos+aneis&language=pt-BR HTTP/1.1" 200 None
