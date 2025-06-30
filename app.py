@@ -5,6 +5,7 @@ import mysql.connector  # type: ignore
 from dotenv import load_dotenv  # type: ignore
 import logging
 import traceback
+import hashlib
 
 logging.basicConfig(
     filename='app.log',
@@ -29,6 +30,65 @@ def conectar_mysql():
         database=os.getenv("DB_NAME", "filmes_db")
     )
 
+# Função de hash de senha
+def hash_senha(senha):
+    return hashlib.sha256(senha.encode()).hexdigest()
+
+# Função para autenticação
+def autenticar_usuario(email, senha):
+    try:
+        conn = conectar_mysql()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, senha_hash FROM usuarios WHERE email = %s", (email,))
+        resultado = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if resultado and resultado[1] == hash_senha(senha):
+            return resultado[0]
+    except:
+        pass
+    return None
+
+# Função para registrar novo usuário
+def registrar_usuario(email, senha):
+    try:
+        conn = conectar_mysql()
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO usuarios (email, senha_hash) VALUES (%s, %s)", (email, hash_senha(senha)))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return True
+    except:
+        return False
+
+# Autenticação
+if "usuario_id" not in st.session_state:
+    st.subheader("🔐 Login ou Cadastro")
+    aba = st.radio("Escolha uma opção:", ["Login", "Cadastro"])
+    email = st.text_input("Email")
+    senha = st.text_input("Senha", type="password")
+
+    if aba == "Login":
+        if st.button("Entrar"):
+            usuario_id = autenticar_usuario(email, senha)
+            if usuario_id:
+                st.session_state.usuario_id = usuario_id
+                st.success("Login realizado com sucesso!")
+                st.rerun()
+            else:
+                st.error("Email ou senha incorretos.")
+    else:
+        if st.button("Cadastrar"):
+            if registrar_usuario(email, senha):
+                st.success("Usuário cadastrado! Faça login.")
+            else:
+                st.error("Erro ao cadastrar. Tente outro email.")
+    st.stop()
+
+# Usuário logado
+usuario_id = st.session_state.usuario_id
+
 try:
     conn = conectar_mysql()
     cursor = conn.cursor()
@@ -36,6 +96,7 @@ try:
     conn.close()
 except Exception as e:
     st.error(f"❌ Erro de conexão com o MySQL: {e}")
+
 
 def buscar_filmes(titulo):
     url = "https://api.themoviedb.org/3/search/movie"
@@ -49,7 +110,7 @@ def buscar_filmes(titulo):
         return resposta.json().get("results", [])
     return []
 
-# Função para classificar filme com base na nota
+
 def classificar_filme(nota):
     if nota <= 4:
         return "Ruim"
@@ -60,14 +121,14 @@ def classificar_filme(nota):
     else:
         return "Filmão"
 
-# Função para salvar ou atualizar filme no banco de dados
+
 def salvar_filme(titulo, ano, assistido_em, poster_url, nota, classificacao):
     try:
         conn = conectar_mysql()
         cursor = conn.cursor()
 
-        sql_select = "SELECT id FROM filmes WHERE titulo = %s AND ano = %s"
-        cursor.execute(sql_select, (titulo, ano))
+        sql_select = "SELECT id FROM filmes WHERE titulo = %s AND ano = %s AND usuario_id = %s"
+        cursor.execute(sql_select, (titulo, ano, usuario_id))
         resultado = cursor.fetchone()
 
         if resultado:
@@ -79,10 +140,10 @@ def salvar_filme(titulo, ano, assistido_em, poster_url, nota, classificacao):
             cursor.execute(sql_update, (assistido_em, poster_url, nota, classificacao, resultado[0]))
         else:
             sql_insert = """
-                INSERT INTO filmes (titulo, ano, assistido_em, poster_url, nota, classificacao)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO filmes (titulo, ano, assistido_em, poster_url, nota, classificacao, usuario_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
-            cursor.execute(sql_insert, (titulo, ano, assistido_em, poster_url, nota, classificacao))
+            cursor.execute(sql_insert, (titulo, ano, assistido_em, poster_url, nota, classificacao, usuario_id))
 
         conn.commit()
         cursor.close()
@@ -94,169 +155,36 @@ def salvar_filme(titulo, ano, assistido_em, poster_url, nota, classificacao):
         st.error("❌ Erro ao salvar no banco.")
         logging.error("Erro ao salvar filme:\n%s", erro)
 
-# Função para exibir filmes salvos com filtros opcionais
-def listar_filmes_salvos():
-    try:
-        conn = conectar_mysql()
-        cursor = conn.cursor()
-        cursor.execute("SELECT titulo, ano, assistido_em, poster_url, nota, classificacao FROM filmes ORDER BY assistido_em DESC")
-        dados = cursor.fetchall()
-        cursor.close()
-        conn.close()
-
-        if dados:
-            st.subheader("🎞️ Filmes Salvos")
-
-            # Filtros
-            with st.expander("🔍 Filtros", expanded=False):
-                anos = sorted(set([str(d[2]) for d in dados if d[2]]))
-                classificacoes = ["Ruim", "Mediano", "Bom", "Filmão"]
-                ano_filtro = st.selectbox("Filtrar por ano assistido", ["Todos"] + anos)
-                classificacao_filtro = st.selectbox("Filtrar por classificação", ["Todas"] + classificacoes)
-                nota_min = st.slider("Nota mínima", 0.0, 10.0, 0.0, 0.5)
-
-            # Aplicar filtros
-            for titulo, ano, assistido_em, poster_url, nota, classificacao in dados:
-                if ano_filtro != "Todos" and str(assistido_em) != ano_filtro:
-                    continue
-                if classificacao_filtro != "Todas" and classificacao != classificacao_filtro:
-                    continue
-                if nota < nota_min:
-                    continue
-
-                cols = st.columns([1, 5])
-                with cols[0]:
-                    if poster_url:
-                        st.image(poster_url, width=60)
-                with cols[1]:
-                    st.markdown(f"<div style='margin-top: -10px;'><strong>{titulo}</strong> ({ano}) - Assistido em {assistido_em}<br>Nota: {nota} - Classificação: {classificacao}</div>", unsafe_allow_html=True)
-        else:
-            st.info("Nenhum filme salvo ainda.")
-    except Exception as e:
-        st.error("Erro ao listar filmes salvos.")
-
-# Função para exibir estatísticas
-def mostrar_estatisticas():
-    try:
-        conn = conectar_mysql()
-        cursor = conn.cursor()
-        cursor.execute("SELECT titulo, ano, poster_url, nota, classificacao FROM filmes")
-        dados = cursor.fetchall()
-
-        total = len(dados)
-        if total == 0:
-            st.info("Nenhuma avaliação registrada ainda.")
-            return
-
-        st.subheader("📊 Estatísticas")
-        st.write(f"Total de filmes avaliados: {total}")
-
-        contagem = {"Ruim": 0, "Mediano": 0, "Bom": 0, "Filmão": 0}
-        for _, _, _, _, c in dados:
-            if c in contagem:
-                contagem[c] += 1
-
-        for tipo in contagem:
-            percentual = (contagem[tipo] / total) * 100
-            st.write(f"{tipo}: {percentual:.1f}%")
-
-        # Top 5 mais bem avaliados
-        st.subheader("🏆 Top 5 Filmes Mais Bem Avaliados")
-        top5 = sorted(dados, key=lambda x: x[3], reverse=True)[:5]
-        for titulo, ano, poster_url, nota, classificacao in top5:
-            cols = st.columns([1, 5])
-            with cols[0]:
-                if poster_url:
-                    st.image(poster_url, width=60)
-            with cols[1]:
-                st.markdown(f"<div style='margin-top: -10px;'><strong>{titulo}</strong> ({ano})<br>Nota: {nota} - Classificação: {classificacao}</div>", unsafe_allow_html=True)
-
-        cursor.close()
-        conn.close()
-
-    except Exception as e:
-        st.error("Erro ao gerar estatísticas.")
-
-# Interface
+# Interface principal após login
 st.title("🎬 Classificador de Filmes")
-
-if "mostrar_filmes" not in st.session_state:
-    st.session_state.mostrar_filmes = False
-
-if "mostrar_estatisticas" not in st.session_state:
-    st.session_state.mostrar_estatisticas = False
-
-col1, col2 = st.columns([1, 1])
-
-with col1:
-    if st.button("📂 Ver Filmes Salvos"):
-        st.session_state.mostrar_filmes = not st.session_state.mostrar_filmes
-
-with col2:
-    if st.button("📈 Ver Estatísticas"):
-        st.session_state.mostrar_estatisticas = not st.session_state.mostrar_estatisticas
-
-if st.session_state.mostrar_filmes:
-    listar_filmes_salvos()
-
-if st.session_state.mostrar_estatisticas:
-    mostrar_estatisticas()
-
-st.markdown("---")
 
 titulo_busca = st.text_input("Digite o nome de um filme:")
 
 if "resultados" not in st.session_state:
-    st.session_state["resultados"] = []
+    st.session_state.resultados = []
 
 if st.button("Buscar"):
-    st.session_state["resultados"] = buscar_filmes(titulo_busca)
+    st.session_state.resultados = buscar_filmes(titulo_busca)
 
-# Obter filmes já salvos para comparação
-filmes_salvos = set()
-try:
-    conn = conectar_mysql()
-    cursor = conn.cursor()
-    cursor.execute("SELECT titulo, ano FROM filmes")
-    filmes_salvos = set((titulo, str(ano)) for titulo, ano in cursor.fetchall())
-    cursor.close()
-    conn.close()
-except:
-    pass
+for filme in st.session_state.resultados[:5]:
+    titulo = filme.get("title")
+    ano = filme.get("release_date", "")[:4]
+    poster = filme.get("poster_path")
+    poster_url = f"{IMG_BASE}{poster}" if poster else ""
+    id_filme = filme.get("id")
 
-resultados = st.session_state["resultados"][:5]
-
-cols = st.columns(2)  # Layout com 2 colunas
-for idx, filme in enumerate(resultados):
-    with cols[idx % 2]:
-        titulo = filme.get("title")
-        ano = filme.get("release_date", "")[:4]
-        poster = filme.get("poster_path")
-        poster_url = f"{IMG_BASE}{poster}" if poster else ""
-        id_filme = filme.get("id")
-
-        ja_assistido = (titulo, ano) in filmes_salvos
-        icone = " ✅" if ja_assistido else ""
-
-        with st.form(key=f"form_{id_filme}"):
-            st.subheader(f"{titulo} ({ano}){icone}")
+    with st.form(key=f"form_{id_filme}"):
+        st.subheader(f"{titulo} ({ano})")
+        cols = st.columns([1, 3])
+        with cols[0]:
             if poster_url:
-                st.image(poster_url, width=200)
-
+                st.image(poster_url, width=100)
+        with cols[1]:
             nota = st.slider(
-                f"Dê uma nota para '{titulo}'",
-                0.0, 10.0, 7.0, 0.5,
-                key=f"nota_{id_filme}"
+                f"Dê uma nota para '{titulo}'", 0.0, 10.0, 7.0, 0.5, key=f"nota_{id_filme}"
             )
-
-            assistido_em = st.number_input(
-                "Ano em que assistiu ao filme:",
-                min_value=1900, max_value=2100, value=2024,
-                key=f"assistido_{id_filme}"
-            )
-
+            assistido_em = st.text_input("Ano em que assistiu:", key=f"assistido_{id_filme}")
             submitted = st.form_submit_button("Salvar avaliação")
-
             if submitted:
                 classificacao = classificar_filme(nota)
                 salvar_filme(titulo, int(ano) if ano else None, assistido_em, poster_url, nota, classificacao)
