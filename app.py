@@ -112,7 +112,7 @@ def listar_filmes_salvos():
                     if poster_url:
                         st.image(poster_url, width=60)
                 with cols[1]:
-                    st.markdown(f"<div style='margin-top: -5px;'><strong>{titulo}</strong> ({ano}) - Assistido em {assistido_em}<br>Nota: {nota} - Classificação: {classificacao}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='margin-top: -10px;'><strong>{titulo}</strong> ({ano}) - Assistido em {assistido_em}<br>Nota: {nota} - Classificação: {classificacao}</div>", unsafe_allow_html=True)
         else:
             st.info("Nenhum filme salvo ainda.")
     except Exception as e:
@@ -152,7 +152,7 @@ def mostrar_estatisticas():
                 if poster_url:
                     st.image(poster_url, width=60)
             with cols[1]:
-                st.markdown(f"<div style='margin-top: -5px;'><strong>{titulo}</strong> ({ano})<br>Nota: {nota} - Classificação: {classificacao}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='margin-top: -10px;'><strong>{titulo}</strong> ({ano})<br>Nota: {nota} - Classificação: {classificacao}</div>", unsafe_allow_html=True)
 
         cursor.close()
         conn.close()
