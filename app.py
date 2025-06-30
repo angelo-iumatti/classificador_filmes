@@ -112,7 +112,7 @@ def listar_filmes_salvos():
                     if poster_url:
                         st.image(poster_url, width=60)
                 with cols[1]:
-                    st.markdown(f"<div style='margin-top: 5px;'><strong>{titulo}</strong> ({ano}) - Assistido em {assistido_em}<br>Nota: {nota} - Classificação: {classificacao}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='margin-top: -5px;'><strong>{titulo}</strong> ({ano}) - Assistido em {assistido_em}<br>Nota: {nota} - Classificação: {classificacao}</div>", unsafe_allow_html=True)
         else:
             st.info("Nenhum filme salvo ainda.")
     except Exception as e:
@@ -123,10 +123,10 @@ def mostrar_estatisticas():
     try:
         conn = conectar_mysql()
         cursor = conn.cursor()
-        cursor.execute("SELECT classificacao FROM filmes")
-        classificacoes = [linha[0] for linha in cursor.fetchall()]
-        total = len(classificacoes)
+        cursor.execute("SELECT titulo, ano, poster_url, nota, classificacao FROM filmes")
+        dados = cursor.fetchall()
 
+        total = len(dados)
         if total == 0:
             st.info("Nenhuma avaliação registrada ainda.")
             return
@@ -135,13 +135,24 @@ def mostrar_estatisticas():
         st.write(f"Total de filmes avaliados: {total}")
 
         contagem = {"Ruim": 0, "Mediano": 0, "Bom": 0, "Filmão": 0}
-        for c in classificacoes:
+        for _, _, _, _, c in dados:
             if c in contagem:
                 contagem[c] += 1
 
         for tipo in contagem:
             percentual = (contagem[tipo] / total) * 100
             st.write(f"{tipo}: {percentual:.1f}%")
+
+        # Top 5 mais bem avaliados
+        st.subheader("🏆 Top 5 Filmes Mais Bem Avaliados")
+        top5 = sorted(dados, key=lambda x: x[3], reverse=True)[:5]
+        for titulo, ano, poster_url, nota, classificacao in top5:
+            cols = st.columns([1, 5])
+            with cols[0]:
+                if poster_url:
+                    st.image(poster_url, width=60)
+            with cols[1]:
+                st.markdown(f"<div style='margin-top: -5px;'><strong>{titulo}</strong> ({ano})<br>Nota: {nota} - Classificação: {classificacao}</div>", unsafe_allow_html=True)
 
         cursor.close()
         conn.close()

@@ -52,3 +52,9 @@ NoneType: None
 2025-06-30 15:28:08,884 [DEBUG] https://api.themoviedb.org:443 "GET /3/search/movie?api_key=5fce5296b0c1d8e1159b8fd70ee5c9a0&query=Avatar&language=pt-BR HTTP/1.1" 200 None
 2025-06-30 15:33:19,303 [DEBUG] Starting new HTTPS connection (1): api.themoviedb.org:443
 2025-06-30 15:33:19,733 [DEBUG] https://api.themoviedb.org:443 "GET /3/search/movie?api_key=5fce5296b0c1d8e1159b8fd70ee5c9a0&query=Avatar&language=pt-BR HTTP/1.1" 200 None
+2025-06-30 15:39:01,107 [DEBUG] Starting new HTTPS connection (1): api.themoviedb.org:443
+2025-06-30 15:39:01,499 [DEBUG] https://api.themoviedb.org:443 "GET /3/search/movie?api_key=5fce5296b0c1d8e1159b8fd70ee5c9a0&query=O+quarto+ao+lado&language=pt-BR HTTP/1.1" 200 None
+2025-06-30 15:39:17,516 [DEBUG] Starting new HTTPS connection (1): api.themoviedb.org:443
+2025-06-30 15:39:18,006 [DEBUG] https://api.themoviedb.org:443 "GET /3/search/movie?api_key=5fce5296b0c1d8e1159b8fd70ee5c9a0&query=O+quarto+ao+lado&language=pt-BR HTTP/1.1" 200 None
+2025-06-30 15:39:33,346 [DEBUG] Starting new HTTPS connection (1): api.themoviedb.org:443
+2025-06-30 15:39:33,743 [DEBUG] https://api.themoviedb.org:443 "GET /3/search/movie?api_key=5fce5296b0c1d8e1159b8fd70ee5c9a0&query=Nonna&language=pt-BR HTTP/1.1" 200 None
