@@ -118,17 +118,61 @@ def listar_filmes_salvos():
     except Exception as e:
         st.error("Erro ao listar filmes salvos.")
 
+# Função para exibir estatísticas
+def mostrar_estatisticas():
+    try:
+        conn = conectar_mysql()
+        cursor = conn.cursor()
+        cursor.execute("SELECT classificacao FROM filmes")
+        classificacoes = [linha[0] for linha in cursor.fetchall()]
+        total = len(classificacoes)
+
+        if total == 0:
+            st.info("Nenhuma avaliação registrada ainda.")
+            return
+
+        st.subheader("📊 Estatísticas")
+        st.write(f"Total de filmes avaliados: {total}")
+
+        contagem = {"Ruim": 0, "Mediano": 0, "Bom": 0, "Filmão": 0}
+        for c in classificacoes:
+            if c in contagem:
+                contagem[c] += 1
+
+        for tipo in contagem:
+            percentual = (contagem[tipo] / total) * 100
+            st.write(f"{tipo}: {percentual:.1f}%")
+
+        cursor.close()
+        conn.close()
+
+    except Exception as e:
+        st.error("Erro ao gerar estatísticas.")
+
 # Interface
 st.title("🎬 Classificador de Filmes")
 
 if "mostrar_filmes" not in st.session_state:
     st.session_state.mostrar_filmes = False
 
-if st.button("📂 Ver Filmes Salvos"):
-    st.session_state.mostrar_filmes = not st.session_state.mostrar_filmes
+if "mostrar_estatisticas" not in st.session_state:
+    st.session_state.mostrar_estatisticas = False
+
+col1, col2 = st.columns([1, 1])
+
+with col1:
+    if st.button("📂 Ver Filmes Salvos"):
+        st.session_state.mostrar_filmes = not st.session_state.mostrar_filmes
+
+with col2:
+    if st.button("📈 Ver Estatísticas"):
+        st.session_state.mostrar_estatisticas = not st.session_state.mostrar_estatisticas
 
 if st.session_state.mostrar_filmes:
     listar_filmes_salvos()
+
+if st.session_state.mostrar_estatisticas:
+    mostrar_estatisticas()
 
 st.markdown("---")
 
