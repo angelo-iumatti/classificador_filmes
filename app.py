@@ -106,38 +106,37 @@ if "resultados" not in st.session_state:
 if st.button("Buscar"):
     st.session_state["resultados"] = buscar_filmes(titulo_busca)
 
-for filme in st.session_state["resultados"][:5]:
-    titulo = filme.get("title")
-    ano = filme.get("release_date", "")[:4]
-    poster = filme.get("poster_path")
-    poster_url = f"{IMG_BASE}{poster}" if poster else ""
-    id_filme = filme.get("id")
+resultados = st.session_state["resultados"][:5]
 
-    with st.form(key=f"form_{id_filme}"):
-        st.subheader(f"{titulo} ({ano})")
-        if poster_url:
-            st.image(poster_url, width=200)
+cols = st.columns(2)  # Layout com 2 colunas
+for idx, filme in enumerate(resultados):
+    with cols[idx % 2]:
+        titulo = filme.get("title")
+        ano = filme.get("release_date", "")[:4]
+        poster = filme.get("poster_path")
+        poster_url = f"{IMG_BASE}{poster}" if poster else ""
+        id_filme = filme.get("id")
 
-        nota = st.slider(
-            f"Dê uma nota para '{titulo}'",
-            0.0, 10.0, 7.0, 0.5,
-            key=f"nota_{id_filme}"
-        )
+        with st.form(key=f"form_{id_filme}"):
+            st.subheader(f"{titulo} ({ano})")
+            if poster_url:
+                st.image(poster_url, width=200)
 
-        assistido_em = st.number_input(
-            "Ano em que assistiu ao filme:",
-            min_value=1900, max_value=2100, value=2024,
-            key=f"assistido_{id_filme}"
-        )
+            nota = st.slider(
+                f"Dê uma nota para '{titulo}'",
+                0.0, 10.0, 7.0, 0.5,
+                key=f"nota_{id_filme}"
+            )
 
-        submitted = st.form_submit_button("Salvar avaliação")
+            assistido_em = st.number_input(
+                "Ano em que assistiu ao filme:",
+                min_value=1900, max_value=2100, value=2024,
+                key=f"assistido_{id_filme}"
+            )
 
-        if submitted:
-            classificacao = classificar_filme(nota)
-            st.write("📩 Dados prontos para salvar:", titulo, ano, assistido_em, poster_url, nota, classificacao)
-            salvar_filme(titulo, int(ano) if ano else None, assistido_em, poster_url, nota, classificacao)
-            st.success(f"Filme salvo com classificação: {classificacao}")
+            submitted = st.form_submit_button("Salvar avaliação")
 
-if st.button("Testar Inserção Manual"):
-    salvar_filme("Filme Teste", 2024, 2023, "https://exemplo.com/poster.jpg", 8.5, "Bom")
-    st.success("Teste de inserção manual concluído!")
+            if submitted:
+                classificacao = classificar_filme(nota)
+                salvar_filme(titulo, int(ano) if ano else None, assistido_em, poster_url, nota, classificacao)
+                st.success(f"Filme salvo com classificação: {classificacao}")
