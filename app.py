@@ -95,8 +95,32 @@ def salvar_filme(titulo, ano, assistido_em, poster_url, nota, classificacao):
         st.error("❌ Erro ao salvar no banco.")
         logging.error("Erro ao salvar filme:\n%s", erro)
 
+# Função para exibir filmes salvos
+def listar_filmes_salvos():
+    try:
+        conn = conectar_mysql()
+        cursor = conn.cursor()
+        cursor.execute("SELECT titulo, ano, assistido_em, nota, classificacao FROM filmes ORDER BY assistido_em DESC")
+        dados = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        if dados:
+            st.subheader("🎞️ Filmes Salvos")
+            for titulo, ano, assistido_em, nota, classificacao in dados:
+                st.markdown(f"**{titulo}** ({ano}) - Assistido em {assistido_em}<br>Nota: {nota} - Classificação: {classificacao}", unsafe_allow_html=True)
+        else:
+            st.info("Nenhum filme salvo ainda.")
+    except Exception as e:
+        st.error("Erro ao listar filmes salvos.")
+
 # Interface
 st.title("🎬 Classificador de Filmes")
+
+if st.button("📂 Ver Filmes Salvos"):
+    listar_filmes_salvos()
+
+st.markdown("---")
 
 titulo_busca = st.text_input("Digite o nome de um filme:")
 
