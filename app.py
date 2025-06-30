@@ -107,12 +107,12 @@ def listar_filmes_salvos():
         if dados:
             st.subheader("🎞️ Filmes Salvos")
             for titulo, ano, assistido_em, poster_url, nota, classificacao in dados:
-                cols = st.columns([1, 4])
+                cols = st.columns([1, 5])
                 with cols[0]:
                     if poster_url:
                         st.image(poster_url, width=60)
                 with cols[1]:
-                    st.markdown(f"**{titulo}** ({ano}) - Assistido em {assistido_em}<br>Nota: {nota} - Classificação: {classificacao}", unsafe_allow_html=True)
+                    st.markdown(f"<div style='margin-top: 5px;'><strong>{titulo}</strong> ({ano}) - Assistido em {assistido_em}<br>Nota: {nota} - Classificação: {classificacao}</div>", unsafe_allow_html=True)
         else:
             st.info("Nenhum filme salvo ainda.")
     except Exception as e:
@@ -140,6 +140,18 @@ if "resultados" not in st.session_state:
 if st.button("Buscar"):
     st.session_state["resultados"] = buscar_filmes(titulo_busca)
 
+# Obter filmes já salvos para comparação
+filmes_salvos = set()
+try:
+    conn = conectar_mysql()
+    cursor = conn.cursor()
+    cursor.execute("SELECT titulo, ano FROM filmes")
+    filmes_salvos = set((titulo, str(ano)) for titulo, ano in cursor.fetchall())
+    cursor.close()
+    conn.close()
+except:
+    pass
+
 resultados = st.session_state["resultados"][:5]
 
 cols = st.columns(2)  # Layout com 2 colunas
@@ -151,8 +163,11 @@ for idx, filme in enumerate(resultados):
         poster_url = f"{IMG_BASE}{poster}" if poster else ""
         id_filme = filme.get("id")
 
+        ja_assistido = (titulo, ano) in filmes_salvos
+        icone = " ✅" if ja_assistido else ""
+
         with st.form(key=f"form_{id_filme}"):
-            st.subheader(f"{titulo} ({ano})")
+            st.subheader(f"{titulo} ({ano}){icone}")
             if poster_url:
                 st.image(poster_url, width=200)
 
