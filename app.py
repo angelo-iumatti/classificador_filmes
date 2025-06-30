@@ -34,7 +34,6 @@ try:
     cursor = conn.cursor()
     cursor.execute("SELECT 1")
     conn.close()
-    st.success("✅ Conexão com o MySQL funcionando!")
 except Exception as e:
     st.error(f"❌ Erro de conexão com o MySQL: {e}")
 
@@ -100,15 +99,20 @@ def listar_filmes_salvos():
     try:
         conn = conectar_mysql()
         cursor = conn.cursor()
-        cursor.execute("SELECT titulo, ano, assistido_em, nota, classificacao FROM filmes ORDER BY assistido_em DESC")
+        cursor.execute("SELECT titulo, ano, assistido_em, poster_url, nota, classificacao FROM filmes ORDER BY assistido_em DESC")
         dados = cursor.fetchall()
         cursor.close()
         conn.close()
 
         if dados:
             st.subheader("🎞️ Filmes Salvos")
-            for titulo, ano, assistido_em, nota, classificacao in dados:
-                st.markdown(f"**{titulo}** ({ano}) - Assistido em {assistido_em}<br>Nota: {nota} - Classificação: {classificacao}", unsafe_allow_html=True)
+            for titulo, ano, assistido_em, poster_url, nota, classificacao in dados:
+                cols = st.columns([1, 4])
+                with cols[0]:
+                    if poster_url:
+                        st.image(poster_url, width=60)
+                with cols[1]:
+                    st.markdown(f"**{titulo}** ({ano}) - Assistido em {assistido_em}<br>Nota: {nota} - Classificação: {classificacao}", unsafe_allow_html=True)
         else:
             st.info("Nenhum filme salvo ainda.")
     except Exception as e:
@@ -117,7 +121,13 @@ def listar_filmes_salvos():
 # Interface
 st.title("🎬 Classificador de Filmes")
 
+if "mostrar_filmes" not in st.session_state:
+    st.session_state.mostrar_filmes = False
+
 if st.button("📂 Ver Filmes Salvos"):
+    st.session_state.mostrar_filmes = not st.session_state.mostrar_filmes
+
+if st.session_state.mostrar_filmes:
     listar_filmes_salvos()
 
 st.markdown("---")
