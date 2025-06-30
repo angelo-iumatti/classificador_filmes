@@ -94,7 +94,7 @@ def salvar_filme(titulo, ano, assistido_em, poster_url, nota, classificacao):
         st.error("❌ Erro ao salvar no banco.")
         logging.error("Erro ao salvar filme:\n%s", erro)
 
-# Função para exibir filmes salvos
+# Função para exibir filmes salvos com filtros opcionais
 def listar_filmes_salvos():
     try:
         conn = conectar_mysql()
@@ -106,7 +106,24 @@ def listar_filmes_salvos():
 
         if dados:
             st.subheader("🎞️ Filmes Salvos")
+
+            # Filtros
+            with st.expander("🔍 Filtros", expanded=False):
+                anos = sorted(set([str(d[2]) for d in dados if d[2]]))
+                classificacoes = ["Ruim", "Mediano", "Bom", "Filmão"]
+                ano_filtro = st.selectbox("Filtrar por ano assistido", ["Todos"] + anos)
+                classificacao_filtro = st.selectbox("Filtrar por classificação", ["Todas"] + classificacoes)
+                nota_min = st.slider("Nota mínima", 0.0, 10.0, 0.0, 0.5)
+
+            # Aplicar filtros
             for titulo, ano, assistido_em, poster_url, nota, classificacao in dados:
+                if ano_filtro != "Todos" and str(assistido_em) != ano_filtro:
+                    continue
+                if classificacao_filtro != "Todas" and classificacao != classificacao_filtro:
+                    continue
+                if nota < nota_min:
+                    continue
+
                 cols = st.columns([1, 5])
                 with cols[0]:
                     if poster_url:
