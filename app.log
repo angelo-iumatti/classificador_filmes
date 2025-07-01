@@ -60,3 +60,15 @@ NoneType: None
 2025-06-30 15:39:33,743 [DEBUG] https://api.themoviedb.org:443 "GET /3/search/movie?api_key=5fce5296b0c1d8e1159b8fd70ee5c9a0&query=Nonna&language=pt-BR HTTP/1.1" 200 None
 2025-06-30 20:26:48,775 [DEBUG] Starting new HTTPS connection (1): api.themoviedb.org:443
 2025-06-30 20:26:49,217 [DEBUG] https://api.themoviedb.org:443 "GET /3/search/movie?api_key=5fce5296b0c1d8e1159b8fd70ee5c9a0&query=senhor+dos+aneis&language=pt-BR HTTP/1.1" 200 None
+2025-07-01 08:12:35,161 [DEBUG] Starting new HTTPS connection (1): api.themoviedb.org:443
+2025-07-01 08:12:35,552 [DEBUG] https://api.themoviedb.org:443 "GET /3/search/movie?api_key=5fce5296b0c1d8e1159b8fd70ee5c9a0&query=Duna&language=pt-BR HTTP/1.1" 200 None
+2025-07-01 08:13:11,642 [DEBUG] Starting new HTTPS connection (1): api.themoviedb.org:443
+2025-07-01 08:13:12,222 [DEBUG] https://api.themoviedb.org:443 "GET /3/search/movie?api_key=5fce5296b0c1d8e1159b8fd70ee5c9a0&query=Duna&language=pt-BR HTTP/1.1" 200 None
+2025-07-01 08:13:35,478 [DEBUG] Starting new HTTPS connection (1): api.themoviedb.org:443
+2025-07-01 08:13:35,833 [DEBUG] https://api.themoviedb.org:443 "GET /3/search/movie?api_key=5fce5296b0c1d8e1159b8fd70ee5c9a0&query=Duna&language=pt-BR HTTP/1.1" 200 None
+2025-07-01 08:13:37,942 [DEBUG] Starting new HTTPS connection (1): api.themoviedb.org:443
+2025-07-01 08:13:38,329 [DEBUG] https://api.themoviedb.org:443 "GET /3/search/movie?api_key=5fce5296b0c1d8e1159b8fd70ee5c9a0&query=&language=pt-BR HTTP/1.1" 200 None
+2025-07-01 08:25:55,900 [DEBUG] Starting new HTTPS connection (1): api.themoviedb.org:443
+2025-07-01 08:25:56,302 [DEBUG] https://api.themoviedb.org:443 "GET /3/search/movie?api_key=5fce5296b0c1d8e1159b8fd70ee5c9a0&query=Duna&language=pt-BR HTTP/1.1" 200 None
+2025-07-01 08:26:50,474 [DEBUG] Starting new HTTPS connection (1): api.themoviedb.org:443
+2025-07-01 08:26:50,910 [DEBUG] https://api.themoviedb.org:443 "GET /3/search/movie?api_key=5fce5296b0c1d8e1159b8fd70ee5c9a0&query=&language=pt-BR HTTP/1.1" 200 None

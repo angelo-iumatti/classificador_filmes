@@ -155,8 +155,8 @@ def salvar_filme(titulo, ano, assistido_em, poster_url, nota, classificacao):
 # Interface principal após login
 st.title("🎬 Classificador de Filmes")
 
+# Botões para alternar visibilidade
 col1, col2 = st.columns([1, 1])
-
 with col1:
     if "mostrar_filmes" not in st.session_state:
         st.session_state.mostrar_filmes = False
@@ -168,6 +168,49 @@ with col2:
         st.session_state.mostrar_estatisticas = False
     if st.button("📊 Ver estatísticas"):
         st.session_state.mostrar_estatisticas = not st.session_state.mostrar_estatisticas
+
+# Campo de busca de filmes
+st.markdown("---")
+titulo_busca = st.text_input("Digite o nome de um filme:")
+if "resultados" not in st.session_state:
+    st.session_state["resultados"] = []
+
+if st.button("Buscar"):
+    st.session_state["resultados"] = buscar_filmes(titulo_busca)
+
+if st.session_state.get("resultados"):
+    col1, col2 = st.columns(2)
+    for idx, filme in enumerate(st.session_state["resultados"][:5]):
+        titulo = filme.get("title")
+        ano = filme.get("release_date", "")[:4]
+        poster = filme.get("poster_path")
+        poster_url = f"{IMG_BASE}{poster}" if poster else ""
+        id_filme = filme.get("id")
+
+        # Verifica se já foi assistido
+        conn = conectar_mysql()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM filmes WHERE titulo = %s AND ano = %s AND usuario_id = %s", (titulo, ano, usuario_id))
+        assistido = cursor.fetchone()[0] > 0
+        cursor.close()
+        conn.close()
+
+        alvo = col1 if idx % 2 == 0 else col2
+        with alvo.form(key=f"form_{id_filme}"):
+            icone = " ✅" if assistido else ""
+            st.subheader(f"{titulo} ({ano}){icone}")
+            if poster_url:
+                st.image(poster_url, width=200)
+            nota = st.slider(f"Nota para '{titulo}'", 0.0, 10.0, 7.0, 0.5, key=f"nota_{id_filme}")
+            assistido_em = st.number_input("Ano em que assistiu", min_value=1900, max_value=2100, value=2024, step=1, key=f"assistido_{id_filme}")
+            submitted = st.form_submit_button("Salvar avaliação")
+
+            if submitted:
+                classificacao = classificar_filme(nota)
+                salvar_filme(titulo, int(ano) if ano else None, assistido_em, poster_url, nota, classificacao)
+                st.success(f"Filme salvo com classificação: {classificacao}")
+
+st.markdown("---")
 
 if st.session_state.mostrar_filmes:
     try:
@@ -189,7 +232,8 @@ if st.session_state.mostrar_filmes:
             query += " AND assistido_em = %s"
             params.append(ano_filtro)
         if classificacoes:
-            query += " AND classificacao IN (%s)" % (",".join(["%s"] * len(classificacoes)))
+            placeholders = ','.join(['%s'] * len(classificacoes))
+            query += f" AND classificacao IN ({placeholders})"
             params.extend(classificacoes)
         query += " AND nota BETWEEN %s AND %s"
         params.extend([nota_min, nota_max])
@@ -202,11 +246,48 @@ if st.session_state.mostrar_filmes:
         for filme in filmes:
             cols = st.columns([1, 4])
             with cols[0]:
-                if filme[4]:
-                    st.image(filme[4], width=80)
+                if filme['poster_url']:
+                    st.image(filme['poster_url'], width=80)
             with cols[1]:
-                st.write(f"**{filme[1]} ({filme[2]})**")
-                st.caption(f"🎞️ Assistido em: {filme[3]} | ⭐ Nota: {filme[5]} | 📌 {filme[6]}")
+                st.write(f"**{filme['titulo']} ({filme['ano']})**")
+                st.caption(f"🎞️ Assistido em: {filme['assistido_em']} | ⭐ Nota: {filme['nota']} | 📌 {filme['classificacao']}")
 
     except Exception as e:
         st.error("Erro ao carregar filmes salvos.")
+
+if st.session_state.mostrar_estatisticas:
+    try:
+        conn = conectar_mysql()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT COUNT(*) as total FROM filmes WHERE usuario_id = %s", (usuario_id,))
+        total = cursor.fetchone()['total']
+
+        st.subheader(f"📊 Estatísticas Gerais")
+        st.markdown(f"**🎞️ Total de filmes assistidos:** {total}")
+
+        cursor.execute("SELECT classificacao, COUNT(*) as qtd FROM filmes WHERE usuario_id = %s GROUP BY classificacao", (usuario_id,))
+        dados = cursor.fetchall()
+
+        for row in dados:
+            porcentagem = (row['qtd'] / total) * 100 if total > 0 else 0
+            st.markdown(f"- {row['classificacao']}: {porcentagem:.1f}%")
+
+        cursor.execute("SELECT titulo, ano, nota, poster_url FROM filmes WHERE usuario_id = %s ORDER BY nota DESC LIMIT 5", (usuario_id,))
+        top_filmes = cursor.fetchall()
+
+        st.markdown("---")
+        st.subheader("🏆 Top 5 mais bem avaliados")
+        for filme in top_filmes:
+            cols = st.columns([1, 4])
+            with cols[0]:
+                if filme['poster_url']:
+                    st.image(filme['poster_url'], width=80)
+            with cols[1]:
+                st.write(f"**{filme['titulo']} ({filme['ano']})**")
+                st.caption(f"⭐ Nota: {filme['nota']}")
+
+        cursor.close()
+        conn.close()
+
+    except Exception as e:
+        st.error("Erro ao carregar estatísticas.")
