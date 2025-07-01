@@ -61,19 +61,19 @@ def registrar_usuario(email, senha):
         return True
     except:
         return False
-    
-# Função para excluir filme
+
+# Função para excluir um filme
 def excluir_filme(filme_id):
     try:
         conn = conectar_mysql()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM filmes WHERE id = %s", (filme_id,))
+        cursor.execute("DELETE FROM filmes WHERE id = %s AND usuario_id = %s", (filme_id, usuario_id))
         conn.commit()
         cursor.close()
         conn.close()
-        return True
-    except:
-        return False
+    except Exception as e:
+        st.error("Erro ao excluir filme.")
+        logging.error("Erro ao excluir filme:\n%s", traceback.format_exc())
 
 # Autenticação
 if "usuario_id" not in st.session_state:
@@ -88,7 +88,7 @@ if "usuario_id" not in st.session_state:
             if usuario_id:
                 st.session_state.usuario_id = usuario_id
                 st.success("Login realizado com sucesso!")
-                st.rerun()
+                st.experimental_rerun()
             else:
                 st.error("Email ou senha incorretos.")
     else:
@@ -290,14 +290,18 @@ if st.session_state.mostrar_estatisticas:
 
         st.markdown("---")
         st.subheader("🏆 Top 5 mais bem avaliados")
-        for filme in top_filmes:
+        for filme in filmes:
             cols = st.columns([1, 4])
             with cols[0]:
                 if filme['poster_url']:
                     st.image(filme['poster_url'], width=80)
             with cols[1]:
                 st.write(f"**{filme['titulo']} ({filme['ano']})**")
-                st.caption(f"⭐ Nota: {filme['nota']}")
+                st.caption(f"🎞️ Assistido em: {filme['assistido_em']} | ⭐ Nota: {filme['nota']} | 📌 {filme['classificacao']}")
+                if st.button(f"🗑️ Excluir", key=f"excluir_{filme['id']}"):
+                    if st.confirm("Tem certeza que deseja excluir esta avaliação?"):
+                        excluir_filme(filme['id'])
+                        st.experimental_rerun()
 
         cursor.close()
         conn.close()
