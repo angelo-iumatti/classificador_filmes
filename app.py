@@ -97,7 +97,6 @@ try:
 except Exception as e:
     st.error(f"❌ Erro de conexão com o MySQL: {e}")
 
-
 def buscar_filmes(titulo):
     url = "https://api.themoviedb.org/3/search/movie"
     params = {
@@ -110,7 +109,6 @@ def buscar_filmes(titulo):
         return resposta.json().get("results", [])
     return []
 
-
 def classificar_filme(nota):
     if nota <= 4:
         return "Ruim"
@@ -120,7 +118,6 @@ def classificar_filme(nota):
         return "Bom"
     else:
         return "Filmão"
-
 
 def salvar_filme(titulo, ano, assistido_em, poster_url, nota, classificacao):
     try:
@@ -158,34 +155,58 @@ def salvar_filme(titulo, ano, assistido_em, poster_url, nota, classificacao):
 # Interface principal após login
 st.title("🎬 Classificador de Filmes")
 
-titulo_busca = st.text_input("Digite o nome de um filme:")
+col1, col2 = st.columns([1, 1])
 
-if "resultados" not in st.session_state:
-    st.session_state.resultados = []
+with col1:
+    if "mostrar_filmes" not in st.session_state:
+        st.session_state.mostrar_filmes = False
+    if st.button("🎞️ Ver filmes salvos"):
+        st.session_state.mostrar_filmes = not st.session_state.mostrar_filmes
 
-if st.button("Buscar"):
-    st.session_state.resultados = buscar_filmes(titulo_busca)
+with col2:
+    if "mostrar_estatisticas" not in st.session_state:
+        st.session_state.mostrar_estatisticas = False
+    if st.button("📊 Ver estatísticas"):
+        st.session_state.mostrar_estatisticas = not st.session_state.mostrar_estatisticas
 
-for filme in st.session_state.resultados[:5]:
-    titulo = filme.get("title")
-    ano = filme.get("release_date", "")[:4]
-    poster = filme.get("poster_path")
-    poster_url = f"{IMG_BASE}{poster}" if poster else ""
-    id_filme = filme.get("id")
+if st.session_state.mostrar_filmes:
+    try:
+        conn = conectar_mysql()
+        cursor = conn.cursor(dictionary=True)
 
-    with st.form(key=f"form_{id_filme}"):
-        st.subheader(f"{titulo} ({ano})")
-        cols = st.columns([1, 3])
-        with cols[0]:
-            if poster_url:
-                st.image(poster_url, width=100)
-        with cols[1]:
-            nota = st.slider(
-                f"Dê uma nota para '{titulo}'", 0.0, 10.0, 7.0, 0.5, key=f"nota_{id_filme}"
-            )
-            assistido_em = st.text_input("Ano em que assistiu:", key=f"assistido_{id_filme}")
-            submitted = st.form_submit_button("Salvar avaliação")
-            if submitted:
-                classificacao = classificar_filme(nota)
-                salvar_filme(titulo, int(ano) if ano else None, assistido_em, poster_url, nota, classificacao)
-                st.success(f"Filme salvo com classificação: {classificacao}")
+        cursor.execute("SELECT DISTINCT assistido_em FROM filmes WHERE usuario_id = %s ORDER BY assistido_em DESC", (usuario_id,))
+        anos = [row['assistido_em'] for row in cursor.fetchall() if row['assistido_em']]
+
+        ano_filtro = st.selectbox("Filtrar por ano assistido", ["Todos"] + anos)
+        classificacoes = st.multiselect("Filtrar por classificação", ["Ruim", "Mediano", "Bom", "Filmão"], default=["Ruim", "Mediano", "Bom", "Filmão"])
+        nota_min = st.slider("Nota mínima", 0.0, 10.0, 0.0, 0.5)
+        nota_max = st.slider("Nota máxima", 0.0, 10.0, 10.0, 0.5)
+
+        query = "SELECT * FROM filmes WHERE usuario_id = %s"
+        params = [usuario_id]
+
+        if ano_filtro != "Todos":
+            query += " AND assistido_em = %s"
+            params.append(ano_filtro)
+        if classificacoes:
+            query += " AND classificacao IN (%s)" % (",".join(["%s"] * len(classificacoes)))
+            params.extend(classificacoes)
+        query += " AND nota BETWEEN %s AND %s"
+        params.extend([nota_min, nota_max])
+
+        cursor.execute(query, tuple(params))
+        filmes = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        for filme in filmes:
+            cols = st.columns([1, 4])
+            with cols[0]:
+                if filme[4]:
+                    st.image(filme[4], width=80)
+            with cols[1]:
+                st.write(f"**{filme[1]} ({filme[2]})**")
+                st.caption(f"🎞️ Assistido em: {filme[3]} | ⭐ Nota: {filme[5]} | 📌 {filme[6]}")
+
+    except Exception as e:
+        st.error("Erro ao carregar filmes salvos.")
